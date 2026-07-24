@@ -51,17 +51,23 @@ function renderOrders(orders) {
           <span class="status-badge status-${order.status}">${order.status}</span>
         </div>
 
-        <div class="mb-3">
+       <div class="mb-3">
           ${order.items
-            .map(
-              (item) => `
-              <div class="d-flex justify-content-between align-items-center py-1">
-                <span class="text-muted">${item.name} x${item.quantity}</span>
-                <span>${formatPrice(item.price * item.quantity)}</span>
+          .map(
+            (item) => `
+              <div class="d-flex justify-content-between align-items-center py-2">
+                <div class="d-flex align-items-center gap-3">
+                  <img src="${item.image}" alt="${item.name}" style="width:50px;height:50px;object-fit:cover;border-radius:10px;" />
+                  <div>
+                    <div class="fw-semibold">${item.name}</div>
+                    <div class="text-muted small">Qty: ${item.quantity}</div>
+                  </div>
+                </div>
+                <span class="fw-semibold">${formatPrice(item.price * item.quantity)}</span>
               </div>
             `
-            )
-            .join("")}
+          )
+          .join("")}
         </div>
 
         <hr />

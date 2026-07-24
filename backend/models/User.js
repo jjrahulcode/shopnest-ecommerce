@@ -29,6 +29,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    walletBalance: {
+      // Every new user automatically starts with ₹70,000 in their wallet
+      type: Number,
+      default: 70000,
+      min: 0,
+    },
   },
   {
     timestamps: true,

@@ -8,9 +8,38 @@ const loadingSpinner = document.getElementById("loadingSpinner");
 const emptyState = document.getElementById("emptyState");
 const searchInput = document.getElementById("searchInput");
 const categoryPills = document.getElementById("categoryPills");
-
 let searchTimeout;
 let activeCategory = "All";
+// Grabs the first available specification to show as a short preview on the card
+function firstSpec(specifications) {
+  if (!specifications) return "";
+  const entries = Object.entries(specifications);
+  if (!entries.length) return "";
+  return `${entries[0][0]}: ${entries[0][1]}`;
+}
+
+const brandFilter = document.getElementById("brandFilter");
+const minPriceInput = document.getElementById("minPriceInput");
+const maxPriceInput = document.getElementById("maxPriceInput");
+const ratingFilter = document.getElementById("ratingFilter");
+const sortSelect = document.getElementById("sortSelect");
+const applyFiltersBtn = document.getElementById("applyFiltersBtn");
+// Fetch and populate the brand filter dropdown
+async function fetchBrands() {
+  try {
+    const response = await fetch(`${API_BASE}/products/meta/brands`);
+    const brands = await response.json();
+
+    brands.forEach((brand) => {
+      const option = document.createElement("option");
+      option.value = brand;
+      option.textContent = brand;
+      brandFilter.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Failed to load brands:", error.message);
+  }
+}
 
 // Fetch and render the list of available categories as pills
 async function fetchCategories() {
@@ -43,7 +72,8 @@ async function fetchCategories() {
   }
 }
 
-// Fetch products from the API, filtered by search/category
+
+// Fetch products from the API, filtered by search/category/brand/price/rating and sorted
 async function fetchProducts() {
   loadingSpinner.classList.remove("d-none");
   productsContainer.innerHTML = "";
@@ -55,6 +85,11 @@ async function fetchProducts() {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (activeCategory) params.append("category", activeCategory);
+    if (brandFilter.value && brandFilter.value !== "All") params.append("brand", brandFilter.value);
+    if (minPriceInput.value) params.append("minPrice", minPriceInput.value);
+    if (maxPriceInput.value) params.append("maxPrice", maxPriceInput.value);
+    if (ratingFilter.value) params.append("minRating", ratingFilter.value);
+    if (sortSelect.value) params.append("sort", sortSelect.value);
 
     const response = await fetch(`${API_BASE}/products?${params.toString()}`);
     const products = await response.json();
@@ -80,23 +115,31 @@ function renderProducts(products) {
   productsContainer.innerHTML = products
     .map(
       (product) => `
-      <div class="col-6 col-md-4 col-lg-3">
+  <div class="col-6 col-md-4 col-lg-3">
         <div class="card product-card">
-          <a href="product.html?id=${product._id}">
+          <a href="product.html?id=${product._id}" class="position-relative d-block">
             <img src="${product.image}" class="card-img-top" alt="${product.name}" />
+            ${product.discount > 0
+          ? `<span class="badge bg-danger position-absolute top-0 start-0 m-2">${product.discount}% OFF</span>`
+          : ""
+        }
           </a>
           <div class="card-body">
             <span class="badge-category">${product.category}</span>
             <a href="product.html?id=${product._id}" class="text-decoration-none">
               <h6 class="card-title">${product.name}</h6>
             </a>
+            <p class="text-muted small mb-1">${product.brand} · ${firstSpec(product.specifications)}</p>
             <div class="rating-stars mb-2">${renderStars(product.rating)}</div>
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center mb-2">
               <span class="price-tag">${formatPrice(product.price)}</span>
               <button class="icon-btn btn btn-gradient btn-sm rounded-circle" style="width:36px;height:36px;" onclick="quickAddToCart('${product._id}', this)">
                 <i class="bi bi-plus-lg"></i>
               </button>
             </div>
+            <a href="product.html?id=${product._id}" class="btn btn-outline-gradient btn-sm w-100">
+              <i class="bi bi-lightning-charge-fill me-1"></i> Buy Now
+            </a>
           </div>
         </div>
       </div>
@@ -148,7 +191,14 @@ searchInput.addEventListener("input", () => {
   searchTimeout = setTimeout(fetchProducts, 400);
 });
 
+// Apply filters immediately when the "Apply" button is clicked
+applyFiltersBtn.addEventListener("click", fetchProducts);
+
+// Re-fetch immediately when the sort dropdown changes (no need to click Apply)
+sortSelect.addEventListener("change", fetchProducts);
+
 document.addEventListener("DOMContentLoaded", () => {
+  fetchBrands();
   fetchCategories();
   fetchProducts();
 });

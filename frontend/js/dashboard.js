@@ -27,9 +27,18 @@ async function fetchProfile() {
     document.getElementById("profileEmail").value = user.email;
     document.getElementById("profilePhone").value = user.phone || "";
     document.getElementById("profileAddress").value = user.address || "";
+
+    // Display the wallet balance formatted as Indian Rupees
+    document.getElementById("walletBalance").textContent = formatWallet(user.walletBalance);
+    localStorage.setItem("walletBalance", user.walletBalance);
   } catch (error) {
     showToast(error.message, "danger");
   }
+}
+
+// Formats a number as an Indian Rupee amount, e.g. 70000 -> ₹70,000
+function formatWallet(amount) {
+  return "₹" + Number(amount).toLocaleString("en-IN");
 }
 
 // Load order stats
